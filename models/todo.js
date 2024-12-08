@@ -38,14 +38,48 @@ module.exports = {
             });
         });
     },
-    update: (id, { text, detail, completed }) => {
+    
+    update: (id, updates) => {
         return new Promise((resolve, reject) => {
-            db.run("UPDATE todos SET text = ?, detail = ?, completed = ? WHERE id = ?", [text, detail || '', completed, id], function(err) {
-                if (err) reject(err);
-                else resolve({ id, text, detail: detail || '', completed });
-            });
+          // 构建更新字段和值列表
+          const updateFields = [];
+          const values = [];
+      
+          if ('text' in updates && updates.text !== undefined && updates.text !== null) {
+            updateFields.push('text = ?');
+            values.push(updates.text);
+          }
+      
+          if ('detail' in updates && updates.detail !== undefined && updates.detail !== null) {
+            updateFields.push('detail = ?');
+            values.push(updates.detail);
+          }
+      
+          if ('completed' in updates) {
+            updateFields.push('completed = ?');
+            values.push(updates.completed);
+          }
+      
+          if (updateFields.length === 0) {
+            return resolve({ id }); // 如果没有提供任何需要更新的字段，则直接返回
+          }
+      
+          // 添加 ID 到值数组的最后
+          values.push(id);
+      
+          console.log('Executing SQL:', `UPDATE todos SET ${updateFields.join(', ')} WHERE id = ?`, 'with values:', values); // 调试信息
+      
+          db.run(`UPDATE todos SET ${updateFields.join(', ')} WHERE id = ?`, values, function(err) {
+            if (err) {
+              console.error('Error executing SQL:', err); // 错误日志
+              reject(err);
+            } else {
+              resolve({ id, ...updates });
+            }
+          });
         });
-    },
+      },
+
     delete: (id) => {
         return new Promise((resolve, reject) => {
             db.run("DELETE FROM todos WHERE id = ?", [id], function(err) {

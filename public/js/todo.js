@@ -57,7 +57,7 @@ span.textContent = todo.completed ? 'Completed' : 'Pending';
 span.style.cursor = 'pointer';
 span.onclick = () => toggleTodo(todo.id, !todo.completed);
 
-updateTodoStatus(li, todo);
+
 
 const deleteButton = document.createElement('button');
 deleteButton.className = 'btn btn-danger btn-sm';
@@ -86,6 +86,7 @@ function updateTodoStatus(li, todo) {
 }
 
 function toggleTodo(id, completed) {
+    console.log('Sending PUT request with:', { id, completed }); // 调试信息
   fetch(`/api/todos/${id}`, {
     method: 'PUT',
     headers: {

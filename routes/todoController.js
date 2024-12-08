@@ -24,11 +24,16 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
+    console.log('Received PUT request with params:', req.params); // 打印路由参数
+    console.log('Received PUT request with body:', req.body);     // 打印请求体
     const { id } = req.params;
     const { text, detail, completed } = req.body;
+    console.log('Updating todo with:', { id, text, detail, completed }); // 打印准备更新的数据
     const todo = await todoModel.update(id, { text, detail, completed });
     res.json(todo);
   } catch (error) {
+
+    console.error('Error during PUT request:', error); // 打印错误详情
     res.status(500).json({ error: error.message });
   }
 });
