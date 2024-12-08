@@ -5,12 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Todo App</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    @media (min-width: 768px) {
+      .todo-item {
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .todo-detail {
+        width: 50%;
+        margin-left: 20px;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="container mt-5">
     <h1 class="text-center">Todo List</h1>
     <div class="input-group mb-3">
-      <input type="text" id="newTodo" class="form-control" placeholder="Add a new todo">
+      <input type="text" id="newTodoText" class="form-control" placeholder="Add a new todo">
+      <textarea id="newTodoDetail" class="form-control" placeholder="Enter detailed information here..." rows="3"></textarea>
       <div class="input-group-append">
         <button class="btn btn-primary" onclick="addTodo()">Add</button>
       </div>

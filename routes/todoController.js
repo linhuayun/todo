@@ -14,8 +14,8 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { text } = req.body;
-    const todo = await todoModel.create(text);
+    const { text, detail } = req.body;
+    const todo = await todoModel.create({ text, detail });
     res.json(todo);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -25,11 +25,10 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { completed } = req.body;
-    const todo = await todoModel.update(id, completed);
+    const { text, detail, completed } = req.body;
+    const todo = await todoModel.update(id, { text, detail, completed });
     res.json(todo);
   } catch (error) {
-    //console.error("Error creating todo:", error); // 在这里添加日志以捕获错误详情
     res.status(500).json({ error: error.message });
   }
 });

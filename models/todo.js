@@ -1,7 +1,6 @@
 // models/todo.js
 const sqlite3 = require('sqlite3').verbose();
-// 使用绝对或相对路径来创建或打开一个现有的SQLite3数据库文件。
-const dbPath = './database.sqlite'; // 你可以根据需要调整这个路径
+const dbPath = './database.sqlite';
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error("Cannot open database:", err.message);
@@ -11,8 +10,15 @@ const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 db.serialize(() => {
-    db.run("CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT, completed BOOLEAN)");
-    console.log("Todos table created or already exists."); // 确认表创建成功
+    db.run(`
+      CREATE TABLE IF NOT EXISTS todos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        text TEXT NOT NULL,
+        detail TEXT,
+        completed BOOLEAN
+      )
+    `);
+    console.log("Todos table created or already exists.");
 });
 
 module.exports = {
@@ -24,19 +30,19 @@ module.exports = {
             });
         });
     },
-    create: (text) => {
+    create: ({ text, detail }) => {
         return new Promise((resolve, reject) => {
-            db.run("INSERT INTO todos (text, completed) VALUES (?, ?)", [text, false], function(err) {
+            db.run("INSERT INTO todos (text, detail, completed) VALUES (?, ?, ?)", [text, detail || '', false], function(err) {
                 if (err) reject(err);
-                else resolve({ id: this.lastID, text, completed: false });
+                else resolve({ id: this.lastID, text, detail: detail || '', completed: false });
             });
         });
     },
-    update: (id, completed) => {
+    update: (id, { text, detail, completed }) => {
         return new Promise((resolve, reject) => {
-            db.run("UPDATE todos SET completed = ? WHERE id = ?", [completed, id], function(err) {
+            db.run("UPDATE todos SET text = ?, detail = ?, completed = ? WHERE id = ?", [text, detail || '', completed, id], function(err) {
                 if (err) reject(err);
-                else resolve({ id, completed });
+                else resolve({ id, text, detail: detail || '', completed });
             });
         });
     },
