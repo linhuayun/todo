@@ -57,6 +57,8 @@ span.textContent = todo.completed ? 'Completed' : 'Pending';
 span.style.cursor = 'pointer';
 span.onclick = () => toggleTodo(todo.id, !todo.completed);
 
+updateTodoStatus(li, todo);
+
 const deleteButton = document.createElement('button');
 deleteButton.className = 'btn btn-danger btn-sm';
 deleteButton.textContent = 'Delete';
@@ -76,21 +78,33 @@ const detail = item.querySelector('.todo-detail');
 detail.classList.toggle('d-none');
 }
 
+function updateTodoStatus(li, todo) {
+  const statusSpan = li.querySelector('span.badge-primary');
+  if (statusSpan) {
+    statusSpan.textContent = todo.completed ? 'Completed' : 'Pending';
+  }
+}
+
 function toggleTodo(id, completed) {
-fetch(`/api/todos/${id}`, {
-  method: 'PUT',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({ completed })
-})
-  .then(response => response.json())
-  .then(todo => {
-    const li = document.querySelector(`li[data-id="${todo.id}"]`);
-    if (li) {
-      li.querySelector('span.badge-primary').textContent = todo.completed ? 'Completed' : 'Pending';
-    }
-  });
+  fetch(`/api/todos/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ completed })
+  })
+    .then(response => response.json())
+    .then(todo => {
+      const li = document.querySelector(`li[data-id="${todo.id}"]`);
+      if (li) {
+        // 更新列表项和详细信息容器中的状态显示
+        updateTodoStatus(li, todo);
+        const detailContainer = li.querySelector('.todo-detail');
+        if (detailContainer) {
+          updateTodoStatus(detailContainer, todo); // 如果有详细信息，则也更新其内的状态
+        }
+      }
+    });
 }
 
 function deleteTodo(id) {
