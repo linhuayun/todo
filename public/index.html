@@ -6,6 +6,35 @@
   <title>Todo App</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <style>
+    .container {
+      display: flex;
+      height: 100vh; /* 使容器占满整个视口高度 */
+    }
+    
+    #todoListContainer {
+      flex: 1;
+      max-width: 33%; /* 左侧列表占据大约1/3 */
+      min-width: 250px; /* 设置最小宽度 */
+      border-right: 1px solid #ddd;
+      overflow-y: auto; /* 如果内容超出容器高度，则允许滚动 */
+    }
+
+    #todoDetailContainer {
+      flex: 2;
+      padding-left: 20px; /* 给右侧留出一些间距 */
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+      
+      #todoListContainer, #todoDetailContainer {
+        width: 100%;
+        max-width: none;
+      }
+    }
+
     @media (min-width: 768px) {
       .todo-item {
         display: flex;
@@ -21,15 +50,18 @@
 </head>
 <body>
   <div class="container mt-5">
-    <h1 class="text-center">Todo List</h1>
-    <div class="input-group mb-3">
-      <input type="text" id="newTodoText" class="form-control" placeholder="Add a new todo">
-      <textarea id="newTodoDetail" class="form-control" placeholder="Enter detailed information here..." rows="3"></textarea>
-      <div class="input-group-append">
-        <button class="btn btn-primary" onclick="addTodo()">Add</button>
+    <div id="todoListContainer" class="mb-3">
+      <h1 class="text-center">Todo List</h1>
+      <div class="input-group mb-3">
+        <input type="text" id="newTodoText" class="form-control" placeholder="Add a new todo">
+        <textarea id="newTodoDetail" class="form-control" placeholder="Enter detailed information here..." rows="3"></textarea>
+        <div class="input-group-append">
+          <button class="btn btn-primary" onclick="addTodo()">Add</button>
+        </div>
       </div>
+      <ul id="todoList" class="list-group"></ul>
     </div>
-    <ul id="todoList" class="list-group"></ul>
+    <div id="todoDetailContainer"></div>
   </div>
 
   <script src="js/todo.js"></script>
