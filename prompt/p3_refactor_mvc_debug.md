@@ -42,6 +42,7 @@ const db = new sqlite3.Database(':memory:');
 
 db.serialize(() => {
     db.run("CREATE TABLE todos (id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT, completed BOOLEAN)");
+    console.log("Todos table created or already exists."); // 确认表创建成功
 });
 
 module.exports = {
@@ -130,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
         .then(response => response.json())
         .then(todo => {
+          console.log("Server response:", todo); // 添加日志以查看服务器响应
           addTodoToList(todo);
           document.getElementById('newTodo').value = '';
         });
@@ -139,7 +141,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function addTodoToList(todo) {
     const li = document.createElement('li');
     li.className = 'list-group-item d-flex justify-content-between align-items-center';
+    console.log('Adding todo with text:', todo.text);
     li.textContent = todo.text;
+    console.log('LI element content after setting text:', li.textContent);
     li.dataset.id = todo.id;
   
     const span = document.createElement('span');
@@ -221,6 +225,7 @@ router.put('/:id', async (req, res) => {
     const todo = await todoModel.update(id, completed);
     res.json(todo);
   } catch (error) {
+    console.error("Error creating todo:", error); // 在这里添加日志以捕获错误详情
     res.status(500).json({ error: error.message });
   }
 });
@@ -239,4 +244,5 @@ module.exports = router;
 ```
 ## 任务
 1、请解释这个程序的功能
-2、请按照MVC模式重构代码
+2、请定位这个bug：
+添加新的待办条目以后，条目的内容没有显示，只有一个pending和delete按钮

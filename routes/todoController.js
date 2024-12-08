@@ -29,7 +29,7 @@ router.put('/:id', async (req, res) => {
     const todo = await todoModel.update(id, completed);
     res.json(todo);
   } catch (error) {
-    console.error("Error creating todo:", error); // 在这里添加日志以捕获错误详情
+    //console.error("Error creating todo:", error); // 在这里添加日志以捕获错误详情
     res.status(500).json({ error: error.message });
   }
 });

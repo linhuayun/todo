@@ -1,9 +1,17 @@
 // models/todo.js
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database(':memory:');
+// 使用绝对或相对路径来创建或打开一个现有的SQLite3数据库文件。
+const dbPath = './database.sqlite'; // 你可以根据需要调整这个路径
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error("Cannot open database:", err.message);
+    } else {
+        console.log("Connected to the SQLite database.");
+    }
+});
 
 db.serialize(() => {
-    db.run("CREATE TABLE todos (id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT, completed BOOLEAN)");
+    db.run("CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT, completed BOOLEAN)");
     console.log("Todos table created or already exists."); // 确认表创建成功
 });
 
