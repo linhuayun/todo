@@ -42,7 +42,10 @@ function addTodoToList(todo) {
   span.className = 'badge badge-primary badge-pill mr-2';
   span.textContent = todo.completed ? 'Completed' : 'Pending';
   span.style.cursor = 'pointer';
-  span.onclick = () => toggleTodo(todo.id, !todo.completed);
+  span.onclick = function() {
+      const currentStatus = this.textContent.toLowerCase() === 'pending';
+      toggleTodo(todo.id, currentStatus);
+  };
 
   const deleteButton = document.createElement('button');
   deleteButton.className = 'btn btn-danger btn-sm';
