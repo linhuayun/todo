@@ -29,7 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function addTodoToList(todo) {
     const li = document.createElement('li');
     li.className = 'list-group-item d-flex justify-content-between align-items-center';
+    console.log('Adding todo with text:', todo.text);
     li.textContent = todo.text;
+    console.log('LI element content after setting text:', li.textContent);
     li.dataset.id = todo.id;
   
     const span = document.createElement('span');
