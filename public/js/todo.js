@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function addTodo() {
   const todoText = document.getElementById('newTodoText').value;
-  const todoDetail = document.getElementById('newTodoDetail').value;
 
   if (todoText) {
     fetch('/api/todos', {
@@ -18,13 +17,12 @@ function addTodo() {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ text: todoText, detail: todoDetail })
+      body: JSON.stringify({ text: todoText })
     })
       .then(response => response.json())
       .then(todo => {
         addTodoToList(todo);
         document.getElementById('newTodoText').value = '';
-        document.getElementById('newTodoDetail').value = '';
       });
   }
 }
@@ -43,6 +41,7 @@ function addTodoToList(todo) {
   span.textContent = todo.completed ? 'Completed' : 'Pending';
   span.style.cursor = 'pointer';
   span.onclick = function() {
+      // 切换当前状态并调用 toggleTodo 函数
       const currentStatus = this.textContent.toLowerCase() === 'pending';
       toggleTodo(todo.id, currentStatus);
   };
@@ -98,14 +97,16 @@ function toggleTodo(id, completed) {
     body: JSON.stringify({ completed })
   })
     .then(response => response.json())
-    .then(todo => {
-      const li = document.querySelector(`li[data-id="${todo.id}"]`);
+    .then(updatedTodo => {
+      const li = document.querySelector(`li[data-id="${updatedTodo.id}"]`);
       if (li) {
         // 更新列表项和详细信息容器中的状态显示
-        updateTodoStatus(li, todo);
-        const detailContainer = li.querySelector('.todo-detail');
-        if (detailContainer) {
-          updateTodoStatus(detailContainer, todo); // 如果有详细信息，则也更新其内的状态
+        updateTodoStatus(li, updatedTodo);
+        // 如果右侧详情区域显示的是当前正在更新的todo，则也更新其内的状态
+        const detailContainer = document.getElementById('todoDetailContainer');
+        const detailTextarea = detailContainer.querySelector('textarea');
+        if (detailTextarea && li.dataset.id == updatedTodo.id) {
+          updateTodoStatus(detailContainer, updatedTodo); 
         }
       }
     });
