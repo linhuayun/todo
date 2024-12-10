@@ -8,6 +8,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+function addEmptyTodo() {
+  // 创建一条新的空待办事项条目
+  const emptyTodo = { text: '', detail: '' };
+
+  // 显示在列表最下方，并设置焦点到新的待办事项
+  addTodoToList(emptyTodo);
+
+  // 获取最新添加的li元素并设置焦点到它的文本框
+  const lastLi = document.getElementById('todoList').lastElementChild.querySelector('.flex-grow-1');
+  if (lastLi) {
+    lastLi.focus();
+  }
+}
+
+
 function addTodo() {
   const todoText = document.getElementById('newTodoText').value;
 
@@ -30,26 +45,31 @@ function addTodo() {
 function addTodoToList(todo) {
   const li = document.createElement('li');
   li.className = 'list-group-item d-flex align-items-center todo-item';
-  li.dataset.id = todo.id;
+  li.dataset.id = todo.id || Math.random().toString(36).substr(2, 9); // 为新创建的todo分配临时ID
 
   const textDiv = document.createElement('div');
-  textDiv.className = 'flex-grow-1';
+  textDiv.className = 'flex-grow-1 editable';
+  textDiv.contentEditable = true;
   textDiv.textContent = todo.text;
+
+  // 监听编辑事件以实现实时保存
+  textDiv.addEventListener('input', (event) => {
+    updateTodoTitle(event.target.parentElement.dataset.id, event.target.textContent);
+  });
 
   const span = document.createElement('span');
   span.className = 'badge badge-primary badge-pill mr-2';
   span.textContent = todo.completed ? 'Completed' : 'Pending';
   span.style.cursor = 'pointer';
   span.onclick = function() {
-      // 切换当前状态并调用 toggleTodo 函数
-      const currentStatus = this.textContent.toLowerCase() === 'pending';
-      toggleTodo(todo.id, currentStatus);
+    const currentStatus = this.textContent.toLowerCase() === 'pending';
+    toggleTodo(li.dataset.id, currentStatus);
   };
 
   const deleteButton = document.createElement('button');
   deleteButton.className = 'btn btn-danger btn-sm';
   deleteButton.textContent = 'Delete';
-  deleteButton.onclick = () => deleteTodo(todo.id);
+  deleteButton.onclick = () => deleteTodo(li.dataset.id);
 
   // 添加点击事件监听器以处理详情显示
   li.onclick = () => showTodoDetail(todo);
@@ -59,6 +79,41 @@ function addTodoToList(todo) {
   li.appendChild(deleteButton);
 
   document.getElementById('todoList').appendChild(li);
+
+  // 如果是新创建的待办事项，则立即保存
+  if (!todo.id) {
+    createTodoInServer(todo.text, todo.detail)
+      .then(savedTodo => {
+        li.dataset.id = savedTodo.id; // 更新真实的ID
+      })
+      .catch(console.error);
+  }
+}
+
+// 实时更新左侧和右侧的todo标题
+function updateTodoTitle(id, title) {
+  fetch(`/api/todos/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: title })
+  })
+    .then(() => {
+      const todoDetail = document.getElementById('todoDetailContainer').querySelector('textarea');
+      if (todoDetail && todoDetail.parentElement.parentElement.querySelector(`[data-id="${id}"]`)) {
+        todoDetail.parentElement.previousElementSibling.textContent = title;
+      }
+    })
+    .catch(console.error);
+}
+
+// 创建新待办事项并在服务器上保存
+async function createTodoInServer(text, detail) {
+  const response = await fetch('/api/todos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, detail })
+  });
+  return await response.json();
 }
 
 function showTodoDetail(todo) {

@@ -52,15 +52,17 @@
   <div class="container mt-5">
     <div id="todoListContainer" class="mb-3">
       <h1 class="text-center">Todo List</h1>
+      <ul id="todoList" class="list-group"></ul>
+    </div>
+    <div id="todoDetailContainer">
+      <!-- 新增标题输入框到右侧详情区域的上方 -->
       <div class="input-group mb-3">
         <input type="text" id="newTodoText" class="form-control" placeholder="Add a new todo">
         <div class="input-group-append">
-          <button class="btn btn-primary" onclick="addTodo()">Add</button>
+          <button class="btn btn-primary" onclick="addEmptyTodo()">Add</button>
         </div>
       </div>
-      <ul id="todoList" class="list-group"></ul>
     </div>
-    <div id="todoDetailContainer"></div>
   </div>
 
   <script src="js/todo.js"></script>
