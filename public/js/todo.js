@@ -60,7 +60,6 @@ function addTodoToList(todo) {
   const li = document.createElement('li');
   li.className = 'list-group-item todo-item';
   li.dataset.id = todo.id;
-  // 存储完整的todo数据
   li.dataset.todo = JSON.stringify(todo);
   
   // 创建左侧容器（复选框和文本）
@@ -82,6 +81,18 @@ function addTodoToList(todo) {
     textSpan.style.textDecoration = 'line-through';
     textSpan.style.color = '#6c757d';
   }
+  
+  // 创建状态切换按钮
+  const statusBtn = document.createElement('button');
+  statusBtn.className = 'btn btn-sm btn-outline-secondary ml-2';
+  statusBtn.textContent = todo.completed ? 'Mark as Incomplete' : 'Mark as Complete';
+  statusBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // 获取当前todo的最新状态
+    const currentTodo = JSON.parse(li.dataset.todo);
+    // 切换状态
+    toggleTodoStatus(todo.id, !currentTodo.completed);
+  });
   
   // 修改点击事件，使用存储的完整todo数据
   textSpan.addEventListener('click', (e) => {
@@ -105,6 +116,7 @@ function addTodoToList(todo) {
   leftContainer.appendChild(checkbox);
   leftContainer.appendChild(textSpan);
   li.appendChild(leftContainer);
+  li.appendChild(statusBtn);
   li.appendChild(deleteBtn);
   
   document.getElementById('todoList').appendChild(li);
@@ -236,6 +248,43 @@ function toggleTodo(id, completed) {
         }
       }
     });
+}
+
+// 切换Todo状态并更新后端
+function toggleTodoStatus(id, newStatus) {
+  fetch(`/api/todos/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ completed: newStatus })
+  })
+  .then(response => {
+    if (response.ok) {
+      return response.json();
+    }
+    throw new Error('Failed to update todo status');
+  })
+  .then(updatedTodo => {
+    console.log('Updated todo status:', updatedTodo);
+    // 更新DOM中的状态
+    const todoItem = document.querySelector(`li[data-id="${id}"]`);
+    if (todoItem) {
+      const statusBtn = todoItem.querySelector('button.btn-outline-secondary');
+      // 更新内存中的todo数据
+      todoItem.dataset.todo = JSON.stringify(updatedTodo);
+      // 更新按钮文本
+      statusBtn.textContent = updatedTodo.completed ? 'Mark as Incomplete' : 'Mark as Complete';
+      // 更新复选框状态
+      const checkbox = todoItem.querySelector('input[type="checkbox"]');
+      if (checkbox) {
+        checkbox.checked = updatedTodo.completed;
+      }
+    }
+  })
+  .catch(error => {
+    console.error('Error toggling todo status:', error);
+  });
 }
 
 // 删除todo
