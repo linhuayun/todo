@@ -47,6 +47,7 @@ async function createNewTodo(text) {
 
     if (response.ok) {
       const savedTodo = await response.json();
+      console.log('Created new todo:', savedTodo);  // 调试日志
       addTodoToList(savedTodo);
     }
   } catch (error) {
@@ -59,6 +60,8 @@ function addTodoToList(todo) {
   const li = document.createElement('li');
   li.className = 'list-group-item todo-item';
   li.dataset.id = todo.id;
+  // 存储完整的todo数据
+  li.dataset.todo = JSON.stringify(todo);
   
   // 创建左侧容器（复选框和文本）
   const leftContainer = document.createElement('div');
@@ -80,10 +83,11 @@ function addTodoToList(todo) {
     textSpan.style.color = '#6c757d';
   }
   
-  // 添加点击事件来显示详情
+  // 修改点击事件，使用存储的完整todo数据
   textSpan.addEventListener('click', (e) => {
     e.stopPropagation();
-    showTodoDetail(todo);
+    const todoData = JSON.parse(li.dataset.todo);
+    showTodoDetail(todoData);
   });
 
   // 创建删除按钮
@@ -108,20 +112,44 @@ function addTodoToList(todo) {
 
 // 显示todo详情
 function showTodoDetail(todo) {
+  console.log('showTodoDetail called with todo:', todo);  // 调试日志
   const detailPanel = document.getElementById('todoDetailPanel');
   const detailInput = document.getElementById('todoDetailInput');
   
   // 更新详情面板内容
   document.querySelector('.detail-title').textContent = todo.text;
   detailInput.value = todo.detail || '';
+  console.log('Setting detail input value to:', todo.detail);  // 调试日志
   detailPanel.dataset.todoId = todo.id;
   
   // 显示详情面板
   detailPanel.classList.remove('d-none');
   setTimeout(() => detailPanel.classList.add('show'), 10);
   
-  // 设置详情更新事件
-  detailInput.onchange = () => updateTodoDetail(todo.id, detailInput.value);
+  // 防抖函数
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  // 使用防抖的输入事件处理器
+  const debouncedUpdate = debounce((value) => {
+    console.log('Debounced update with value:', value);
+    updateTodoDetail(todo.id, value);
+  }, 300);
+
+  // 设置输入事件监听
+  detailInput.oninput = (e) => {
+    console.log('Detail input event fired with:', e.target.value);
+    debouncedUpdate(e.target.value);
+  };
 }
 
 // 关闭详情面板
@@ -162,13 +190,26 @@ if (detailTextarea) {
 
 // 更新 Todo 的详情
 function updateTodoDetail(id, detail) {
+  console.log('Updating todo detail:', { id, detail });
   fetch(`/api/todos/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({ detail })
-    
+  }).then(response => {
+    console.log('Update detail response:', response.status);
+    return response.json();
+  }).then(updatedTodo => {
+    console.log('Updated todo:', updatedTodo);
+    // 更新DOM中存储的todo数据
+    const todoItem = document.querySelector(`li[data-id="${id}"]`);
+    if (todoItem) {
+      // 将完整的更新后的todo数据存储在DOM元素中
+      todoItem.dataset.todo = JSON.stringify(updatedTodo);
+    }
+  }).catch(error => {
+    console.error('Error updating todo detail:', error);
   });
 }
 
