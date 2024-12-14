@@ -54,14 +54,16 @@
       <h1 class="text-center">Todo List</h1>
       <ul id="todoList" class="list-group"></ul>
     </div>
-    <div id="todoDetailContainer">
-      <!-- 新增标题输入框到右侧详情区域的上方 -->
+    <div id="todoDetailContainer" class="d-flex flex-column">
+      <!-- 标题输入框和Add按钮放在单独的div中 -->
       <div class="input-group mb-3">
         <input type="text" id="newTodoText" class="form-control" placeholder="Add a new todo">
         <div class="input-group-append">
           <button class="btn btn-primary" onclick="addEmptyTodo()">Add</button>
         </div>
       </div>
+      <!-- 详情输入框默认显示 -->
+      <textarea id="newTodoDetail" class="form-control mb-3" rows="10" placeholder="Add details here..."></textarea>
     </div>
   </div>
 

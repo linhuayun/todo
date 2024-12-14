@@ -5,19 +5,23 @@ const todoModel = require('../models/todo');
 
 router.get('/', async (req, res) => {
   try {
+    console.log('Handling GET request to /api/todos'); // 打印处理GET请求的信息
     const todos = await todoModel.getAll();
     res.json(todos);
   } catch (error) {
+    console.log('Handling GET request to /api/todos error', error.message); // 打印处理GET请求的信息
     res.status(500).json({ error: error.message });
   }
 });
 
 router.post('/', async (req, res) => {
   try {
+    console.log('Handling POST request to /api/todos with body:', req.body); // 打印POST请求体的内容
     const { text, detail } = req.body;
     const todo = await todoModel.create({ text, detail });
     res.json(todo);
   } catch (error) {
+    console.log('Handling POST request to /api/todos error', error.message); // 打印处理GET请求的信息
     res.status(500).json({ error: error.message });
   }
 });

@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function addEmptyTodo() {
-  // 创建一条新的空待办事项条目
   const emptyTodo = { text: '', detail: '' };
 
   // 显示在列表最下方，并设置焦点到新的待办事项
@@ -20,26 +19,9 @@ function addEmptyTodo() {
   if (lastLi) {
     lastLi.focus();
   }
-}
 
-
-function addTodo() {
-  const todoText = document.getElementById('newTodoText').value;
-
-  if (todoText) {
-    fetch('/api/todos', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ text: todoText })
-    })
-      .then(response => response.json())
-      .then(todo => {
-        addTodoToList(todo);
-        document.getElementById('newTodoText').value = '';
-      });
-  }
+  // 清空详情输入框
+  document.getElementById('newTodoDetail').value = '';
 }
 
 function addTodoToList(todo) {
@@ -48,14 +30,8 @@ function addTodoToList(todo) {
   li.dataset.id = todo.id || Math.random().toString(36).substr(2, 9); // 为新创建的todo分配临时ID
 
   const textDiv = document.createElement('div');
-  textDiv.className = 'flex-grow-1 editable';
-  textDiv.contentEditable = true;
+  textDiv.className = 'flex-grow-1'; // 移除 contentEditable 属性
   textDiv.textContent = todo.text;
-
-  // 监听编辑事件以实现实时保存
-  textDiv.addEventListener('input', (event) => {
-    updateTodoTitle(event.target.parentElement.dataset.id, event.target.textContent);
-  });
 
   const span = document.createElement('span');
   span.className = 'badge badge-primary badge-pill mr-2';
@@ -71,7 +47,7 @@ function addTodoToList(todo) {
   deleteButton.textContent = 'Delete';
   deleteButton.onclick = () => deleteTodo(li.dataset.id);
 
-  // 添加点击事件监听器以处理详情显示
+  // 添加点击事件监听器以处理详情显示和标题同步
   li.onclick = () => showTodoDetail(todo);
 
   li.appendChild(textDiv);
@@ -90,8 +66,37 @@ function addTodoToList(todo) {
   }
 }
 
+// 创建新待办事项并在服务器上保存
+async function createTodoInServer(text, detail) {
+  console.log('Creating new todo:', { text, detail }); // 打印创建的新待办事项数据
+  const response = await fetch('/api/todos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, detail })
+  });
+  return await response.json();
+}
+
+// 显示或隐藏详情输入框并同步标题
+function showTodoDetail(todo) {
+  const detailContainer = document.getElementById('todoDetailContainer');
+  const detailTextarea = detailContainer.querySelector('textarea');
+  const newTodoText = document.getElementById('newTodoText');
+
+  if (detailTextarea && newTodoText) {
+    if (todo) {
+      detailTextarea.value = todo.detail || '';
+      newTodoText.value = todo.text; // 同步标题到右侧输入框
+    } else {
+      detailTextarea.value = ''; // 清空详情输入框
+      newTodoText.value = ''; // 清空标题输入框
+    }
+  }
+}
+
 // 实时更新左侧和右侧的todo标题
 function updateTodoTitle(id, title) {
+  console.log('Updating todo title:', { id, title }); // 打印更新的待办事项ID和标题
   fetch(`/api/todos/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -106,35 +111,20 @@ function updateTodoTitle(id, title) {
     .catch(console.error);
 }
 
-// 创建新待办事项并在服务器上保存
-async function createTodoInServer(text, detail) {
-  const response = await fetch('/api/todos', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, detail })
+// 新增：监听详情输入框的变化并保存
+const detailTextarea = document.getElementById('newTodoDetail');
+if (detailTextarea) {
+  detailTextarea.addEventListener('input', (event) => {
+    const selectedTodoId = document.querySelector('#todoList .active')?.dataset.id;
+    if (selectedTodoId) {
+      const selectedTodoId = document.querySelector('#todoList .active')?.dataset.id;
+      updateTodoDetail(selectedTodoId, event.target.value);
+    }
   });
-  return await response.json();
 }
 
-function showTodoDetail(todo) {
-  const detailContainer = document.getElementById('todoDetailContainer');
-  detailContainer.innerHTML = ''; // 清空之前的详情
+// 其他函数保持不变...
 
-  if (!todo) return;
-
-  const textarea = document.createElement('textarea');
-  textarea.className = 'form-control';
-  textarea.rows = "10";
-  textarea.value = todo.detail || '';
-
-  // 监听 input 事件以实现实时保存
-  textarea.addEventListener('input', (event) => {
-    const updatedDetail = event.target.value;
-    updateTodoDetail(todo.id, updatedDetail);
-  });
-
-  detailContainer.appendChild(textarea);
-}
 
 function updateTodoStatus(li, todo) {
   const statusSpan = li.querySelector('span.badge-primary');
@@ -188,5 +178,6 @@ function updateTodoDetail(id, detail) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({ detail })
+    
   });
 }
