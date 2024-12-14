@@ -9,6 +9,8 @@
     .container {
       display: flex;
       height: 100vh; /* 使容器占满整个视口高度 */
+      max-width: 800px;
+      position: relative;
     }
     
     #todoListContainer {
@@ -17,11 +19,57 @@
       min-width: 250px; /* 设置最小宽度 */
       border-right: 1px solid #ddd;
       overflow-y: auto; /* 如果内容超出容器高度，则允许滚动 */
+      width: 100%;
+      transition: all 0.3s ease;
     }
 
     #todoDetailContainer {
       flex: 2;
       padding-left: 20px; /* 给右侧留出一些间距 */
+    }
+
+    .todo-detail-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 40%;
+      height: 100vh;
+      background: white;
+      box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+      padding: 20px;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    }
+    
+    .todo-detail-panel.show {
+      transform: translateX(0);
+    }
+
+    .todo-item {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .todo-item:hover {
+      background-color: #f8f9fa;
+    }
+
+    #quickAddInput {
+      border-radius: 20px;
+      padding: 10px 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    #quickAddInput:focus {
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+      border-color: #80bdff;
+    }
+
+    .todo-detail {
+      width: 50%;
+      margin-left: 20px;
     }
 
     @media (max-width: 768px) {
@@ -32,6 +80,18 @@
       #todoListContainer, #todoDetailContainer {
         width: 100%;
         max-width: none;
+      }
+      
+      .todo-detail-panel {
+        width: 100%;
+        height: 50vh;
+        bottom: 0;
+        top: auto;
+        transform: translateY(100%);
+      }
+      
+      .todo-detail-panel.show {
+        transform: translateY(0);
       }
     }
 
@@ -50,20 +110,33 @@
 </head>
 <body>
   <div class="container mt-5">
-    <div id="todoListContainer" class="mb-3">
-      <h1 class="text-center">Todo List</h1>
-      <ul id="todoList" class="list-group"></ul>
+    <div id="todoListContainer">
+      <h1 class="text-center mb-4">Todo List</h1>
+      <!-- 新的快速输入框 -->
+      <div class="input-group mb-4">
+        <input type="text" id="quickAddInput" class="form-control form-control-lg" 
+               placeholder="What needs to be done? Press Enter to add">
+      </div>
+      <!-- Todo列表 -->
+      <div class="todo-list-wrapper">
+        <ul id="todoList" class="list-group"></ul>
+      </div>
     </div>
-    <div id="todoDetailContainer" class="d-flex flex-column">
-      <!-- 标题输入框和Add按钮放在单独的div中 -->
-      <div class="input-group mb-3">
-        <input type="text" id="newTodoText" class="form-control" placeholder="Add a new todo">
-        <div class="input-group-append">
-          <button class="btn btn-primary" onclick="addEmptyTodo()">Add</button>
+    <!-- 详情编辑面板 - 默认隐藏 -->
+    <div id="todoDetailPanel" class="todo-detail-panel d-none">
+      <div class="detail-header d-flex justify-content-between align-items-center mb-3">
+        <h3 class="detail-title mb-0">Task Details</h3>
+        <div class="btn-group">
+          <button type="button" class="btn btn-outline-danger mr-2" onclick="deleteTodoFromDetail()">
+            Delete
+          </button>
+          <button type="button" class="close" onclick="closeTodoDetail()">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
       </div>
-      <!-- 详情输入框默认显示 -->
-      <textarea id="newTodoDetail" class="form-control mb-3" rows="10" placeholder="Add details here..."></textarea>
+      <textarea id="todoDetailInput" class="form-control mb-3" rows="5" 
+                placeholder="Add details here..."></textarea>
     </div>
   </div>
 

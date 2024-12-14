@@ -1,4 +1,11 @@
+// 初始化
 document.addEventListener('DOMContentLoaded', () => {
+  loadTodos();
+  setupQuickAdd();
+});
+
+// 加载所有todos
+function loadTodos() {
   fetch('/api/todos')
     .then(response => response.json())
     .then(todos => {
@@ -6,92 +13,122 @@ document.addEventListener('DOMContentLoaded', () => {
         addTodoToList(todo);
       });
     });
-});
-
-function addEmptyTodo() {
-  const emptyTodo = { text: '', detail: '' };
-
-  // 显示在列表最下方，并设置焦点到新的待办事项
-  addTodoToList(emptyTodo);
-
-  // 获取最新添加的li元素并设置焦点到它的文本框
-  const lastLi = document.getElementById('todoList').lastElementChild.querySelector('.flex-grow-1');
-  if (lastLi) {
-    lastLi.focus();
-  }
-
-  // 清空详情输入框
-  document.getElementById('newTodoDetail').value = '';
 }
 
-function addTodoToList(todo) {
-  const li = document.createElement('li');
-  li.className = 'list-group-item d-flex align-items-center todo-item';
-  li.dataset.id = todo.id || Math.random().toString(36).substr(2, 9); // 为新创建的todo分配临时ID
+// 设置快速添加功能
+function setupQuickAdd() {
+  const quickAddInput = document.getElementById('quickAddInput');
+  quickAddInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && quickAddInput.value.trim()) {
+      const todoText = quickAddInput.value.trim();
+      createNewTodo(todoText);
+      quickAddInput.value = '';
+    }
+  });
+}
 
-  const textDiv = document.createElement('div');
-  textDiv.className = 'flex-grow-1'; // 移除 contentEditable 属性
-  textDiv.textContent = todo.text;
-
-  const span = document.createElement('span');
-  span.className = 'badge badge-primary badge-pill mr-2';
-  span.textContent = todo.completed ? 'Completed' : 'Pending';
-  span.style.cursor = 'pointer';
-  span.onclick = function() {
-    const currentStatus = this.textContent.toLowerCase() === 'pending';
-    toggleTodo(li.dataset.id, currentStatus);
+// 创建新的todo
+async function createNewTodo(text) {
+  const todo = {
+    text: text,
+    detail: '',
+    completed: false,
+    createdAt: new Date().toISOString()
   };
 
-  const deleteButton = document.createElement('button');
-  deleteButton.className = 'btn btn-danger btn-sm';
-  deleteButton.textContent = 'Delete';
-  deleteButton.onclick = () => deleteTodo(li.dataset.id);
+  try {
+    const response = await fetch('/api/todos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(todo)
+    });
 
-  // 添加点击事件监听器以处理详情显示和标题同步
-  li.onclick = () => showTodoDetail(todo);
-
-  li.appendChild(textDiv);
-  li.appendChild(span);
-  li.appendChild(deleteButton);
-
-  document.getElementById('todoList').appendChild(li);
-
-  // 如果是新创建的待办事项，则立即保存
-  if (!todo.id) {
-    createTodoInServer(todo.text, todo.detail)
-      .then(savedTodo => {
-        li.dataset.id = savedTodo.id; // 更新真实的ID
-      })
-      .catch(console.error);
-  }
-}
-
-// 创建新待办事项并在服务器上保存
-async function createTodoInServer(text, detail) {
-  console.log('Creating new todo:', { text, detail }); // 打印创建的新待办事项数据
-  const response = await fetch('/api/todos', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, detail })
-  });
-  return await response.json();
-}
-
-// 显示或隐藏详情输入框并同步标题
-function showTodoDetail(todo) {
-  const detailContainer = document.getElementById('todoDetailContainer');
-  const detailTextarea = detailContainer.querySelector('textarea');
-  const newTodoText = document.getElementById('newTodoText');
-
-  if (detailTextarea && newTodoText) {
-    if (todo) {
-      detailTextarea.value = todo.detail || '';
-      newTodoText.value = todo.text; // 同步标题到右侧输入框
-    } else {
-      detailTextarea.value = ''; // 清空详情输入框
-      newTodoText.value = ''; // 清空标题输入框
+    if (response.ok) {
+      const savedTodo = await response.json();
+      addTodoToList(savedTodo);
     }
+  } catch (error) {
+    console.error('Error creating todo:', error);
   }
+}
+
+// 添加todo到列表
+function addTodoToList(todo) {
+  const li = document.createElement('li');
+  li.className = 'list-group-item todo-item';
+  li.dataset.id = todo.id;
+  
+  // 创建左侧容器（复选框和文本）
+  const leftContainer = document.createElement('div');
+  leftContainer.className = 'd-flex align-items-center flex-grow-1';
+  
+  // 创建复选框
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.className = 'mr-3';
+  checkbox.checked = todo.completed;
+  checkbox.addEventListener('change', () => toggleTodo(todo.id, checkbox.checked));
+  
+  // 创建文本容器
+  const textSpan = document.createElement('span');
+  textSpan.className = 'flex-grow-1 ml-2';
+  textSpan.textContent = todo.text;
+  if (todo.completed) {
+    textSpan.style.textDecoration = 'line-through';
+    textSpan.style.color = '#6c757d';
+  }
+  
+  // 添加点击事件来显示详情
+  textSpan.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showTodoDetail(todo);
+  });
+
+  // 创建删除按钮
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'btn btn-sm btn-outline-danger ml-2';
+  deleteBtn.innerHTML = '&times;';
+  deleteBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (confirm('Are you sure you want to delete this todo?')) {
+      deleteTodo(todo.id);
+    }
+  });
+  
+  // 组装元素
+  leftContainer.appendChild(checkbox);
+  leftContainer.appendChild(textSpan);
+  li.appendChild(leftContainer);
+  li.appendChild(deleteBtn);
+  
+  document.getElementById('todoList').appendChild(li);
+}
+
+// 显示todo详情
+function showTodoDetail(todo) {
+  const detailPanel = document.getElementById('todoDetailPanel');
+  const detailInput = document.getElementById('todoDetailInput');
+  
+  // 更新详情面板内容
+  document.querySelector('.detail-title').textContent = todo.text;
+  detailInput.value = todo.detail || '';
+  detailPanel.dataset.todoId = todo.id;
+  
+  // 显示详情面板
+  detailPanel.classList.remove('d-none');
+  setTimeout(() => detailPanel.classList.add('show'), 10);
+  
+  // 设置详情更新事件
+  detailInput.onchange = () => updateTodoDetail(todo.id, detailInput.value);
+}
+
+// 关闭详情面板
+function closeTodoDetail() {
+  const detailPanel = document.getElementById('todoDetailPanel');
+  detailPanel.classList.remove('show');
+  setTimeout(() => detailPanel.classList.add('d-none'), 300);
 }
 
 // 实时更新左侧和右侧的todo标题
@@ -123,16 +160,19 @@ if (detailTextarea) {
   });
 }
 
-// 其他函数保持不变...
-
-
-function updateTodoStatus(li, todo) {
-  const statusSpan = li.querySelector('span.badge-primary');
-  if (statusSpan) {
-    statusSpan.textContent = todo.completed ? 'Completed' : 'Pending';
-  }
+// 更新 Todo 的详情
+function updateTodoDetail(id, detail) {
+  fetch(`/api/todos/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ detail })
+    
+  });
 }
 
+// 切换todo状态
 function toggleTodo(id, completed) {
   fetch(`/api/todos/${id}`, {
     method: 'PUT',
@@ -157,6 +197,7 @@ function toggleTodo(id, completed) {
     });
 }
 
+// 删除todo
 function deleteTodo(id) {
   fetch(`/api/todos/${id}`, {
     method: 'DELETE'
@@ -170,14 +211,21 @@ function deleteTodo(id) {
     });
 }
 
-// 更新 Todo 的详情
-function updateTodoDetail(id, detail) {
-  fetch(`/api/todos/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ detail })
-    
-  });
+// 从详情面板删除todo
+function deleteTodoFromDetail() {
+  const detailPanel = document.getElementById('todoDetailPanel');
+  const todoId = detailPanel.dataset.todoId;
+  
+  if (todoId && confirm('Are you sure you want to delete this todo?')) {
+    deleteTodo(todoId);
+    closeTodoDetail();
+  }
+}
+
+// 更新todo状态
+function updateTodoStatus(li, todo) {
+  const statusSpan = li.querySelector('span.badge-primary');
+  if (statusSpan) {
+    statusSpan.textContent = todo.completed ? 'Completed' : 'Pending';
+  }
 }
