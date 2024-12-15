@@ -85,7 +85,7 @@ function addTodoToList(todo) {
   // 创建状态切换按钮
   const statusBtn = document.createElement('button');
   statusBtn.className = 'btn btn-sm btn-outline-secondary ml-2';
-  statusBtn.textContent = todo.completed ? 'Mark as Incomplete' : 'Mark as Complete';
+  statusBtn.textContent = todo.completed ? 'completed' : 'pending';
   statusBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     // 获取当前todo的最新状态
@@ -274,7 +274,7 @@ function toggleTodoStatus(id, newStatus) {
       // 更新内存中的todo数据
       todoItem.dataset.todo = JSON.stringify(updatedTodo);
       // 更新按钮文本
-      statusBtn.textContent = updatedTodo.completed ? 'Mark as Incomplete' : 'Mark as Complete';
+      statusBtn.textContent = updatedTodo.completed ? 'completed' : 'pending';
       // 更新复选框状态
       const checkbox = todoItem.querySelector('input[type="checkbox"]');
       if (checkbox) {
