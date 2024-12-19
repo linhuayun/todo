@@ -127,9 +127,14 @@ function showTodoDetail(todo) {
   console.log('showTodoDetail called with todo:', todo);  // 调试日志
   const detailPanel = document.getElementById('todoDetailPanel');
   const detailInput = document.getElementById('todoDetailInput');
+  const detailTitle = document.querySelector('.detail-title');
   
   // 更新详情面板内容
-  document.querySelector('.detail-title').textContent = todo.text;
+  if (todo && todo.text) {
+    detailTitle.textContent = todo.text;
+  } else {
+    detailTitle.textContent = 'New Task';
+  }
   detailInput.value = todo.detail || '';
   console.log('Setting detail input value to:', todo.detail);  // 调试日志
   detailPanel.dataset.todoId = todo.id;
@@ -167,8 +172,12 @@ function showTodoDetail(todo) {
 // 关闭详情面板
 function closeTodoDetail() {
   const detailPanel = document.getElementById('todoDetailPanel');
+  const detailTitle = document.querySelector('.detail-title');
   detailPanel.classList.remove('show');
-  setTimeout(() => detailPanel.classList.add('d-none'), 300);
+  setTimeout(() => {
+    detailPanel.classList.add('d-none');
+    detailTitle.textContent = 'New Task';
+  }, 300);
 }
 
 // 实时更新左侧和右侧的todo标题
