@@ -88,6 +88,12 @@ function showTodoDetail(todo) {
   const detailInput = document.getElementById('todoDetailInput');
   const detailTitle = document.querySelector('.detail-title');
   
+  // 从DOM中获取最新的todo数据
+  const li = document.querySelector(`li[data-id="${todo.id}"]`);
+  if (li) {
+    todo = JSON.parse(li.dataset.todo);
+  }
+  
   // 更新详情面板内容
   if (todo && todo.text) {
     detailTitle.textContent = todo.text;
@@ -139,10 +145,39 @@ async function saveTodo() {
   }
   
   if (todoId) {
-    // 更新现有todo
-    await updateTodoDetail(todoId, content);
-    if (title) {
-      await updateTodoTitle(todoId, title);
+    try {
+      // 更新现有todo
+      const response = await fetch(`/api/todos/${todoId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: title,
+          detail: content
+        })
+      });
+
+      if (response.ok) {
+        const updatedTodo = await response.json();
+        // 更新左侧列表项
+        const li = document.querySelector(`li[data-id="${todoId}"]`);
+        if (li) {
+          const titleElement = li.querySelector('.todo-title');
+          const detailElement = li.querySelector('.todo-detail-preview');
+          if (titleElement) titleElement.textContent = updatedTodo.text;
+          if (detailElement) detailElement.textContent = updatedTodo.detail || 'No details';
+          
+          // 更新存储的todo数据
+          li.dataset.todo = JSON.stringify(updatedTodo);
+          
+          // 更新详情面板的显示
+          detailTitle.textContent = updatedTodo.text;
+          detailInput.value = updatedTodo.detail || '';
+        }
+      }
+    } catch (error) {
+      console.error('Error updating todo:', error);
     }
   } else {
     // 创建新todo
@@ -171,6 +206,9 @@ async function saveTodo() {
           detailTitle.textContent = 'Untitled';
           detailTitle.classList.remove('placeholder');
         }
+        
+        // 更新详情面板显示完整的保存后的数据
+        detailInput.value = savedTodo.detail || '';
       }
     } catch (error) {
       console.error('Error creating todo:', error);
@@ -178,17 +216,85 @@ async function saveTodo() {
   }
 }
 
-// 防抖函数
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
+// 切换todo状态
+async function toggleTodoStatus(id, newStatus) {
+  try {
+    console.log('Toggling status:', { id, newStatus }); // 调试日志
+    const response = await fetch(`/api/todos/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ completed: newStatus })
+    });
+
+    if (response.ok) {
+      const updatedTodo = await response.json();
+      console.log('Server response:', updatedTodo); // 调试日志
+      
+      // 更新列表项的状态
+      const li = document.querySelector(`li[data-id="${id}"]`);
+      if (li) {
+        const checkbox = li.querySelector('.todo-checkbox');
+        
+        // 更新复选框状态
+        if (updatedTodo.completed) {
+          li.classList.add('completed');
+          checkbox.classList.add('completed');
+          checkbox.innerHTML = '<i class="fas fa-check"></i>';
+        } else {
+          li.classList.remove('completed');
+          checkbox.classList.remove('completed');
+          checkbox.innerHTML = '';
+        }
+        
+        // 更新存储的todo数据
+        li.dataset.todo = JSON.stringify(updatedTodo);
+        
+        // 如果当前正在显示这个todo的详情，也更新详情面板
+        const detailPanel = document.getElementById('todoDetailPanel');
+        if (detailPanel.dataset.todoId === id) {
+          showTodoDetail(updatedTodo);
+        }
+      }
+    } else {
+      console.error('Server returned error:', await response.text()); // 调试日志
+    }
+  } catch (error) {
+    console.error('Error updating todo status:', error);
+  }
+}
+
+// 更新todo详情
+async function updateTodoDetail(id, detail) {
+  if (!id) return;
+  
+  try {
+    const response = await fetch(`/api/todos/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ detail })
+    });
+
+    if (response.ok) {
+      const updatedTodo = await response.json();
+      // 更新列表项中的详情预览
+      const li = document.querySelector(`li[data-id="${id}"]`);
+      if (li) {
+        const detailPreview = li.querySelector('.todo-detail-preview');
+        if (detailPreview) {
+          detailPreview.textContent = detail || 'No details';
+        }
+        
+        // 更新存储的todo数据
+        li.dataset.todo = JSON.stringify(updatedTodo);
+      }
+    }
+  } catch (error) {
+    console.error('Error updating todo detail:', error);
+  }
 }
 
 // 创建新的todo
@@ -222,67 +328,53 @@ async function createNewTodo(text) {
 // 添加todo到列表
 function addTodoToList(todo) {
   const li = document.createElement('li');
-  li.className = 'list-group-item todo-item';
+  li.className = `list-group-item todo-item${todo.completed ? ' completed' : ''}`;
   li.dataset.id = todo.id;
   li.dataset.todo = JSON.stringify(todo);
   
-  // 创建左侧容器（复选框和文本）
-  const leftContainer = document.createElement('div');
-  leftContainer.className = 'd-flex align-items-center flex-grow-1';
-  
   // 创建复选框
-  const checkbox = document.createElement('input');
-  checkbox.type = 'checkbox';
-  checkbox.className = 'mr-3';
-  checkbox.checked = todo.completed;
-  checkbox.addEventListener('change', () => toggleTodo(todo.id, checkbox.checked));
-  
-  // 创建文本容器
-  const textSpan = document.createElement('span');
-  textSpan.className = 'flex-grow-1 ml-2';
-  textSpan.textContent = todo.text;
+  const checkbox = document.createElement('div');
+  checkbox.className = `todo-checkbox${todo.completed ? ' completed' : ''}`;
   if (todo.completed) {
-    textSpan.style.textDecoration = 'line-through';
-    textSpan.style.color = '#6c757d';
+    checkbox.innerHTML = '<i class="fas fa-check"></i>';
   }
   
-  // 创建状态切换按钮
-  const statusBtn = document.createElement('button');
-  statusBtn.className = 'btn btn-sm btn-outline-secondary ml-2';
-  statusBtn.textContent = todo.completed ? 'completed' : 'pending';
-  statusBtn.addEventListener('click', (e) => {
+  // 添加点击事件处理器
+  checkbox.addEventListener('click', async (e) => {
     e.stopPropagation();
     // 获取当前todo的最新状态
     const currentTodo = JSON.parse(li.dataset.todo);
-    // 切换状态
-    toggleTodoStatus(todo.id, !currentTodo.completed);
+    await toggleTodoStatus(todo.id, !currentTodo.completed);
   });
   
-  // 修改点击事件，使用存储的完整todo数据
-  textSpan.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const todoData = JSON.parse(li.dataset.todo);
-    showTodoDetail(todoData);
-  });
-
-  // 创建删除按钮
-  const deleteBtn = document.createElement('button');
-  deleteBtn.className = 'btn btn-sm btn-outline-danger ml-2';
-  deleteBtn.innerHTML = '&times;';
-  deleteBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (confirm('Are you sure you want to delete this todo?')) {
-      deleteTodo(todo.id);
-    }
+  // 创建内容容器
+  const content = document.createElement('div');
+  content.className = 'todo-content';
+  
+  // 创建标题
+  const title = document.createElement('div');
+  title.className = 'todo-title';
+  title.textContent = todo.text;
+  
+  // 创建详情预览
+  const detailPreview = document.createElement('div');
+  detailPreview.className = 'todo-detail-preview';
+  detailPreview.textContent = todo.detail || 'No details';
+  
+  // 组装内容
+  content.appendChild(title);
+  content.appendChild(detailPreview);
+  
+  // 添加点击事件，显示详情
+  content.addEventListener('click', () => {
+    showTodoDetail(todo);
   });
   
-  // 组装元素
-  leftContainer.appendChild(checkbox);
-  leftContainer.appendChild(textSpan);
-  li.appendChild(leftContainer);
-  li.appendChild(statusBtn);
-  li.appendChild(deleteBtn);
+  // 组装列表项
+  li.appendChild(checkbox);
+  li.appendChild(content);
   
+  // 添加到列表
   document.getElementById('todoList').appendChild(li);
 }
 
@@ -326,93 +418,6 @@ if (detailTextarea) {
   });
 }
 
-// 更新 Todo 的详情
-function updateTodoDetail(id, detail) {
-  console.log('Updating todo detail:', { id, detail });
-  fetch(`/api/todos/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ detail })
-  }).then(response => {
-    console.log('Update detail response:', response.status);
-    return response.json();
-  }).then(updatedTodo => {
-    console.log('Updated todo:', updatedTodo);
-    // 更新DOM中存储的todo数据
-    const todoItem = document.querySelector(`li[data-id="${id}"]`);
-    if (todoItem) {
-      // 将完整的更新后的todo数据存储在DOM元素中
-      todoItem.dataset.todo = JSON.stringify(updatedTodo);
-    }
-  }).catch(error => {
-    console.error('Error updating todo detail:', error);
-  });
-}
-
-// 切换todo状态
-function toggleTodo(id, completed) {
-  fetch(`/api/todos/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ completed })
-  })
-    .then(response => response.json())
-    .then(updatedTodo => {
-      const li = document.querySelector(`li[data-id="${updatedTodo.id}"]`);
-      if (li) {
-        // 更新列表项和详细信息容器中的状态显示
-        updateTodoStatus(li, updatedTodo);
-        // 如果右侧详情区域显示的是当前正在更新的todo，则也更新其内的状态
-        const detailContainer = document.getElementById('todoDetailContainer');
-        const detailTextarea = detailContainer.querySelector('textarea');
-        if (detailTextarea && li.dataset.id == updatedTodo.id) {
-          updateTodoStatus(detailContainer, updatedTodo); 
-        }
-      }
-    });
-}
-
-// 切换Todo状态并更新后端
-function toggleTodoStatus(id, newStatus) {
-  fetch(`/api/todos/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ completed: newStatus })
-  })
-  .then(response => {
-    if (response.ok) {
-      return response.json();
-    }
-    throw new Error('Failed to update todo status');
-  })
-  .then(updatedTodo => {
-    console.log('Updated todo status:', updatedTodo);
-    // 更新DOM中的状态
-    const todoItem = document.querySelector(`li[data-id="${id}"]`);
-    if (todoItem) {
-      const statusBtn = todoItem.querySelector('button.btn-outline-secondary');
-      // 更新内存中的todo数据
-      todoItem.dataset.todo = JSON.stringify(updatedTodo);
-      // 更新按钮文本
-      statusBtn.textContent = updatedTodo.completed ? 'completed' : 'pending';
-      // 更新复选框状态
-      const checkbox = todoItem.querySelector('input[type="checkbox"]');
-      if (checkbox) {
-        checkbox.checked = updatedTodo.completed;
-      }
-    }
-  })
-  .catch(error => {
-    console.error('Error toggling todo status:', error);
-  });
-}
-
 // 删除todo
 function deleteTodo(id) {
   fetch(`/api/todos/${id}`, {
@@ -439,40 +444,22 @@ function deleteTodoFromDetail() {
 }
 
 // 更新todo状态
-function updateTodoStatus(li, todo) {
+async function updateTodoStatus(li, todo) {
   const statusSpan = li.querySelector('span.badge-primary');
   if (statusSpan) {
     statusSpan.textContent = todo.completed ? 'Completed' : 'Pending';
   }
 }
 
-// 更新todo标题
-async function updateTodoTitle(id, newTitle) {
-  if (!id) return;
-
-  try {
-    const response = await fetch(`/api/todos/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ text: newTitle })
-    });
-
-    if (response.ok) {
-      const updatedTodo = await response.json();
-      // 更新左侧列表中的标题
-      const todoItem = document.querySelector(`li[data-id="${id}"] span`);
-      if (todoItem) {
-        todoItem.textContent = newTitle;
-        // 更新存储在dataset中的todo数据
-        const li = todoItem.closest('li');
-        const todoData = JSON.parse(li.dataset.todo);
-        todoData.text = newTitle;
-        li.dataset.todo = JSON.stringify(todoData);
-      }
-    }
-  } catch (error) {
-    console.error('Error updating todo title:', error);
-  }
+// 防抖函数
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
 }

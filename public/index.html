@@ -66,16 +66,65 @@
       cursor: pointer;
       transition: background-color 0.2s ease;
       display: flex;
-      justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px 15px;
+      border-bottom: 1px solid #eee;
+      height: 80px;
     }
     
     .todo-item:hover {
       background-color: #f8f9fa;
     }
 
-    .todo-detail {
-      width: 50%;
-      margin-left: 20px;
+    .todo-content {
+      flex-grow: 1;
+      margin-left: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .todo-title {
+      font-weight: 500;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .todo-detail-preview {
+      color: #6c757d;
+      font-size: 0.875rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .todo-checkbox {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #6c757d;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .todo-checkbox.completed {
+      border-color: #28a745;
+      background-color: #28a745;
+      color: white;
+    }
+
+    .todo-item.completed .todo-title {
+      text-decoration: line-through;
+      color: #6c757d;
     }
 
     .detail-title {
