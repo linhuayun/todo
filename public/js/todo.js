@@ -1,7 +1,7 @@
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
   loadTodos();
-  setupQuickAdd();
+  showNewTodo();
 });
 
 // 加载所有todos
@@ -15,16 +15,109 @@ function loadTodos() {
     });
 }
 
-// 设置快速添加功能
-function setupQuickAdd() {
-  const quickAddInput = document.getElementById('quickAddInput');
-  quickAddInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && quickAddInput.value.trim()) {
-      const todoText = quickAddInput.value.trim();
-      createNewTodo(todoText);
-      quickAddInput.value = '';
+// 显示新建todo面板
+function showNewTodo() {
+  const detailPanel = document.getElementById('todoDetailPanel');
+  const detailInput = document.getElementById('todoDetailInput');
+  const detailTitle = document.querySelector('.detail-title');
+  
+  // 重置面板内容
+  detailTitle.textContent = 'New Task';
+  detailInput.value = '';
+  detailPanel.dataset.todoId = '';
+  
+  // 显示面板
+  detailPanel.classList.remove('d-none');
+  setTimeout(() => detailPanel.classList.add('show'), 10);
+  
+  // 设置输入事件监听
+  setupDetailInputListener();
+}
+
+// 设置详情输入监听器
+function setupDetailInputListener() {
+  const detailInput = document.getElementById('todoDetailInput');
+  const detailTitle = document.querySelector('.detail-title');
+  
+  // 移除之前的事件监听器
+  detailInput.oninput = null;
+  
+  // 添加新的事件监听器
+  detailInput.oninput = debounce((e) => {
+    const todoId = document.getElementById('todoDetailPanel').dataset.todoId;
+    const value = e.target.value;
+    
+    if (todoId) {
+      // 更新现有todo
+      updateTodoDetail(todoId, value);
+    } else {
+      // 如果是新todo，第一行作为标题
+      const firstLine = value.split('\n')[0].trim();
+      if (firstLine) {
+        detailTitle.textContent = firstLine;
+      } else {
+        detailTitle.textContent = 'New Task';
+      }
     }
-  });
+  }, 300);
+}
+
+// 保存todo
+async function saveTodo() {
+  const detailPanel = document.getElementById('todoDetailPanel');
+  const detailInput = document.getElementById('todoDetailInput');
+  const todoId = detailPanel.dataset.todoId;
+  const content = detailInput.value;
+  
+  if (!content.trim()) {
+    return;
+  }
+  
+  const firstLine = content.split('\n')[0].trim();
+  const remainingContent = content.split('\n').slice(1).join('\n').trim();
+  
+  if (todoId) {
+    // 更新现有todo
+    await updateTodoDetail(todoId, content);
+  } else {
+    // 创建新todo
+    const todo = {
+      text: firstLine || 'New Task',
+      detail: remainingContent,
+      completed: false
+    };
+    
+    try {
+      const response = await fetch('/api/todos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(todo)
+      });
+
+      if (response.ok) {
+        const savedTodo = await response.json();
+        addTodoToList(savedTodo);
+        detailPanel.dataset.todoId = savedTodo.id;
+      }
+    } catch (error) {
+      console.error('Error creating todo:', error);
+    }
+  }
+}
+
+// 防抖函数
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
 }
 
 // 创建新的todo

@@ -9,31 +9,42 @@
   <style>
     .container {
       display: flex;
-      height: 100vh; /* 使容器占满整个视口高度 */
+      height: 100vh;
       max-width: 800px;
       position: relative;
     }
     
     #todoListContainer {
       flex: 1;
-      max-width: 33%; /* 左侧列表占据大约1/3 */
-      min-width: 250px; /* 设置最小宽度 */
+      max-width: 33%;
+      min-width: 250px;
       border-right: 1px solid #ddd;
-      overflow-y: auto; /* 如果内容超出容器高度，则允许滚动 */
+      overflow-y: auto;
       width: 100%;
       transition: all 0.3s ease;
+      padding: 20px;
     }
 
-    #todoDetailContainer {
-      flex: 2;
-      padding-left: 20px; /* 给右侧留出一些间距 */
+    #newTodoBtn {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    #newTodoBtn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 3px 7px rgba(0,0,0,0.3);
     }
 
     .todo-detail-panel {
       position: fixed;
       top: 0;
       right: 0;
-      width: 40%;
+      width: 67%;
       height: 100vh;
       background: white;
       box-shadow: -2px 0 5px rgba(0,0,0,0.1);
@@ -42,6 +53,11 @@
       transition: transform 0.3s ease;
     }
     
+    #todoDetailContainer {
+      flex: 2;
+      padding-left: 20px;
+    }
+
     .todo-detail-panel.show {
       transform: translateX(0);
     }
@@ -55,17 +71,6 @@
     
     .todo-item:hover {
       background-color: #f8f9fa;
-    }
-
-    #quickAddInput {
-      border-radius: 20px;
-      padding: 10px 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    
-    #quickAddInput:focus {
-      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-      border-color: #80bdff;
     }
 
     .todo-detail {
@@ -112,11 +117,11 @@
 <body>
   <div class="container mt-5">
     <div id="todoListContainer">
-      <h1 class="text-center mb-4">Todo List</h1>
-      <!-- 新的快速输入框 -->
-      <div class="input-group mb-4">
-        <input type="text" id="quickAddInput" class="form-control form-control-lg" 
-               placeholder="What needs to be done? Press Enter to add">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Todo List</h1>
+        <button id="newTodoBtn" class="btn btn-primary rounded-circle" onclick="showNewTodo()">
+          <i class="fas fa-plus"></i>
+        </button>
       </div>
       <!-- Todo列表 -->
       <div class="todo-list-wrapper">
@@ -128,6 +133,9 @@
       <div class="detail-header d-flex justify-content-between align-items-center mb-3">
         <h3 class="detail-title mb-0">New Task</h3>
         <div class="btn-group">
+          <button type="button" class="btn btn-success mr-2" onclick="saveTodo()">
+            <i class="fas fa-save"></i>
+          </button>
           <button type="button" class="btn btn-outline-danger mr-2" onclick="deleteTodoFromDetail()">
             <i class="fas fa-trash"></i>
           </button>
